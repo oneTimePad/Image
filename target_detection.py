@@ -5,7 +5,7 @@ from matplotlib import pyplot as plt
 cap =cv2.VideoCapture(0)
 
 
-img = cv2.imread('/home/lie/Desktop/p/capt0004.jpg')
+img = cv2.imread('/home/lie/Desktop/p/capt0001.jpg')
 
 #gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
 '''
@@ -65,6 +65,8 @@ for gray in cv2.split(dst):
 	se = np.ones((7,7), dtype='uint8')
 	bin = cv2.morphologyEx(bin, cv2.MORPH_CLOSE, se)
 
+	
+
 	#kernel = np.ones((5,5),np.uint8)
 	#bin = cv2.erode(bin,kernel,iterations = 1)
 	#bin = cv2.dilate(bin, cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(5,5)))
@@ -109,6 +111,7 @@ for gray in cv2.split(dst):
 for cut in cuts:
 	for gray in cv2.split(cut):
 		bin = cv2.Canny(cut, 100, 200, apertureSize=5)
+		
 		bin = cv2.dilate(bin, cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(5,5)))
 		imgcopy = img.copy()
 		contours, hierarchy = cv2.findContours(bin.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
