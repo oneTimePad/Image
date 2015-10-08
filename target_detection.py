@@ -1,12 +1,12 @@
 import numpy as np
 import cv2
-import sys, os
+import sys, os, errno
 from matplotlib import pyplot as plt
 
 cap = cv2.VideoCapture(0)
 
 img = cv2.imread(os.getcwd() + '/test_pictures/capt0001.jpg')
-if img == None:
+if img is None:
 	print("Failed to read image, check path")
 	sys.exit(1)
 
@@ -25,6 +25,7 @@ for rho,theta in lines[0]:
     y2 = int(y0 - 1000*(a))
 
     cv2.line(img,(x1,y1),(x2,y2),(0,0,255),2)'''
+
 # denoises image using optimized Non-Local Means alg
 # --------------
 # src, dst, 
@@ -34,7 +35,6 @@ for rho,theta in lines[0]:
 # 					 should be odd (7);
 # searchWindowSize = pixel size of window to compute weighted average
 # 				   should be odd (21), increases search time linearly
-
 lum = 10
 lumColor = lum
 dst = cv2.fastNlMeansDenoisingColored(img,None,lum,lumColor,7,21)
@@ -165,23 +165,28 @@ for cnt in contours:
 imgCopy2 = img.copy()
 cv2.drawContours(imgCopy2,cnts,-1,(0,255,0),3)
 
+# write cuts to file (idk)
+try:
+    os.makedirs(os.getcwd() + '/ret_pics/')
+except OSError as exception:
+    if exception.errno != errno.EEXIST:
+        raise
 for i in range(0, len(cuts)):
 	cv2.imwrite(os.getcwd() + '/ret_pics/cut'+str(i)+'.jpg',cuts[i])
 
-while cv2.waitKey(30) != ord('b'):
-	cv2.imshow('ORIGINAL',imgCopy2)
-	cv2.imshow('Letter',letter)
-	#cv2.imshow('canny',canny[0])
-	cv2.imshow('orig1',imgs[0])
-	cv2.imshow('orig2',imgs[1])
-	cv2.imshow('orig3',imgs[2])
-	cv2.imshow('orig4',imgs[3])
-	cv2.imshow('orig5',imgs[4])
-	cv2.imshow('orig6',imgs[5])
-	#cv2.imshow('canny1',cannys[0])
-	#cv2.imshow('canny2',cannys[1])
-	#cv2.imshow('canny3',cannys[2])
-	cv2.imshow('Thresh1', reses[0])
-	cv2.imshow('Thresh2',reses[1])
-	cv2.imshow('Thresh3',reses[2])
-	
+cv2.imshow('ORIGINAL',imgCopy2)
+cv2.moveWindow('ORIGINAL', 50, 0)
+cv2.imshow('Letter', letter)
+cv2.moveWindow('Letter', 50, len(imgCopy2))
+currImg = imgs[0]
+for i in range(1, len(imgs)):
+	currImg = np.concatenate((currImg, imgs[i]), axis=1)
+cv2.imshow('Original Cuts',currImg)
+heig = len(imgCopy2) + len(currImg)
+cv2.moveWindow('Original Cuts', 50, len(imgCopy2) + len(currImg))
+currImg = reses[0]
+for i in range(1, len(reses)):
+	currImg = np.concatenate((currImg, reses[i]), axis=1)
+cv2.imshow('Thresholds',currImg)
+cv2.moveWindow('Thresholds', 50, heig + len(currImg))
+cv2.waitKey(0)
