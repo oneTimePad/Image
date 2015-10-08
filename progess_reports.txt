@@ -1,0 +1,6 @@
+10/8/2015 3:24AM
+
+No messing around with the actual algorithms for now, just cleaned things up and made the testing work nicely. I'll write up a (hopefully) readable explanation of some of the algorithms later.
+
+ + Added comments. Reformatted stuff into functions. Removed extraneous whitespace.
+ + File reading/writing extended to all machines. Now continues to process images based off user input until user stops it. 
