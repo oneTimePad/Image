@@ -1,4 +1,4 @@
-import cv, cv2
+import cv2
 import numpy as np
 import itertools
 import sys
@@ -58,7 +58,7 @@ def rhombus(height=100, width=100, iterations=20, border=20):
 			shapes.append(np.array(shape, np.int32))
 	return shapes
 
-def trapazoid(height=100, width=100, iterations=20, border=20):
+def trapezoid(height=100, width=100, iterations=20, border=20):
 	minTop = int(math.ceil(width * 0.10))
 	maxTop = int(math.ceil(width * 0.35))
 	minHeight = int(math.ceil(height * 0.10))
@@ -284,7 +284,7 @@ classes = []
 
 img_size = 200
 
-for func,name in zip([triangle(width=img_size, height=img_size), rectangle(width=img_size, height=img_size), trapazoid(width=img_size, height=img_size), rhombus(width=img_size, height=img_size)], ['triangle', 'rectangle', 'trapazoid', 'rhombus']):
+for func,name in zip([triangle(width=img_size, height=img_size), rectangle(width=img_size, height=img_size), trapezoid(width=img_size, height=img_size), rhombus(width=img_size, height=img_size)], ['triangle', 'rectangle', 'trapezoid', 'rhombus']):
 	print name
 	skip = 0
 	for shape in func:
@@ -339,7 +339,7 @@ svm_errors = []
 
 lenzip = 0
 count = 0
-for func,name in zip([triangle(width=img_size, height=img_size), rectangle(width=img_size, height=img_size), trapazoid(width=img_size, height=img_size), rhombus(width=img_size, height=img_size)], ['triangle', 'rectangle', 'trapazoid', 'rhombus']):
+for func,name in zip([triangle(width=img_size, height=img_size), rectangle(width=img_size, height=img_size), trapezoid(width=img_size, height=img_size), rhombus(width=img_size, height=img_size)], ['triangle', 'rectangle', 'trapezoid', 'rhombus']):
 	print name
 	for shape in func:
 		#print "tick"

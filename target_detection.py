@@ -6,6 +6,10 @@ from matplotlib import pyplot as plt
 # idk why this is here
 # cap = cv2.VideoCapture(0)
 
+# global values for quickly changing values for fine-tuning stuff
+default = 7
+debugValue = default
+
 def getLetter(img, cuts):
 	#WORKS!!!!!!!!!!!!!!!!!
 	letter = cv2.Canny(cuts[2], 100, 200, apertureSize=3)	
@@ -30,8 +34,8 @@ def getEdgesOfCuts(img, cuts):
 			# Canny edge detection
 			# --------------
 			# src;
-			# minVal = value that definitely is NOT an edge
-			# maxVal = value that definitely is an edge
+			# minVal = value of intensity gradient that is NOT an edge
+			# maxVal = value of intensity gradient that is an edge
 			# apertureSize = size of the Sobel kernel
 			bin = cv2.Canny(cut, 100, 200, apertureSize=5)
 
@@ -39,7 +43,8 @@ def getEdgesOfCuts(img, cuts):
 			# kernel = function with two parameters:
 			# 			shape = ellipse-ish;
 			# 			size = size of kernel 
-			bin = cv2.dilate(bin, cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(5,5)))
+			kernelSize = 5
+			bin = cv2.dilate(bin, cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(kernelSize,kernelSize)))
 
 			# see lines 98-109, epsilon is higher	
 			contours, hierarchy = cv2.findContours(bin.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
@@ -68,14 +73,18 @@ def getCutsByThreshold(img,dst):
 
 	# split takes one array of multiple color channels, 
 	# returns multiple arrays of one channel each
-	for gray in cv2.split(dst):	
+	for gray in cv2.split(dst):
+		cv2.imshow('channel', gray)
+		cv2.waitKey(0)
+		cv2.destroyWindow('channel')
+
 		# turns channel into black/white
 		# --------------
 		# src,
 		# threshold = useless with automatic optimal?,
 		# maxVal = maximum value to use with binary threshold
-		# threshold type = BINARY (sets to maxVal if passes thresh, 0 otherwise) +
-		# 				   OTSU (ignores given thresh and finds optimal on its own)
+		# threshold type = BINARY (sets to maxVal if a given pixel passes threshold, 0 otherwise) +
+		# 				   OTSU (ignores given thresh, finds optimal threshold for a given bimodal distribution)
 		# --- return ---
 		# ret = calculated threshold value
 		# bin = output image			
@@ -88,7 +97,8 @@ def getCutsByThreshold(img,dst):
 		# src, type, 
 		# kernel = convolution matrix to run through image
 		# 		   (bigger size == more noise taken out, more computation)
-		se = np.ones((7,7), dtype='uint8')
+		closeKernelSize = 7
+		se = np.ones((closeKernelSize,closeKernelSize), dtype='uint8')
 		bin = cv2.morphologyEx(bin, cv2.MORPH_CLOSE, se)
 
 		'''kernel = np.ones((5,5),np.uint8)
@@ -102,7 +112,7 @@ def getCutsByThreshold(img,dst):
 		cuts.append(cut)
 
 		'''bin = cv2.dilate(bin, cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(5,5)))
-		bin = cv2.Canny(cut, 100, 200, apertureSize=5)
+	-	bin = cv2.Canny(cut, 100, 200, apertureSize=5)
 		bin = cv2.dilate(bin, cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(5,5)))
 		canny.append(binCanny)
 		bin = cv2.cvtColor(cut,cv2.COLOR_BGR2GRAY)'''
@@ -129,7 +139,7 @@ def getCutsByThreshold(img,dst):
 
 	return reses,cuts
 
-def displayEverything(letter, imgs, imgCopy2, reses, cuts):
+def displayEverything(dst, letter, imgs, imgCopy2, reses, cuts):
 	# write cuts to file (idk)
 	try:
 	    os.makedirs(os.getcwd() + '/ret_pics/')
@@ -140,6 +150,7 @@ def displayEverything(letter, imgs, imgCopy2, reses, cuts):
 		cv2.imwrite(os.getcwd() + '/ret_pics/cut'+str(i)+'.jpg',cuts[i])
 
 	# display everything nicely
+	imgCopy2 = np.concatenate((imgCopy2, dst), axis=1)
 	cv2.imshow('ORIGINAL',imgCopy2)
 	cv2.moveWindow('ORIGINAL', 50, 0)
 	cv2.imshow('Letter', letter)
@@ -196,11 +207,26 @@ def findAndDisplayLetter(img):
 	plt.show()
 	canny = []'''
 
-	reses,cuts = getCutsByThreshold(img,dst)
+	reses,cuts = getCutsByThreshold(img, dst)
 	imgs = getEdgesOfCuts(img, cuts)
 	letter,imgCopy2 = getLetter(img, cuts)
 
-	displayEverything(letter, imgs, imgCopy2, reses, cuts)
+	displayEverything(dst, letter, imgs, imgCopy2, reses, cuts)
+
+def getNewDebugValFromUser(minVal, maxVal, isInteger=True):
+	global debugValue
+	debugValue = default
+	while True:
+		if isInteger:
+			newVal = int(raw_input('Enter new value: '))
+			if newVal >= minVal and newVal <= maxVal:
+				debugValue = newVal
+				break
+			else:
+				print("Out of range. Reenter a value.")
+		else: # to do: add floats
+			break
+
 
 def getImageFromUser():
 	imgName = raw_input('Enter new picture to test: ')
@@ -219,6 +245,7 @@ def cleanUp():
 def main():
 	while True:
 		img = getImageFromUser()
+		getNewDebugValFromUser(0, 25)
 		findAndDisplayLetter(img)
 		cv2.waitKey(0)
 		cleanUp()
