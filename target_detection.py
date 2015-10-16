@@ -3,26 +3,29 @@ import cv2
 import sys, os, errno
 from matplotlib import pyplot as plt
 
-# idk why this is here
-# cap = cv2.VideoCapture(0)
-
 # global values for quickly changing values for fine-tuning stuff
 default = 7
 debugValue = default
 
+cannyLowerEdgeGradient = 100
+cannyUpperEdgeGradient = 200
+
 def getLetter(img, cuts):
 	#WORKS!!!!!!!!!!!!!!!!!
-	letter = cv2.Canny(cuts[2], 100, 200, apertureSize=3)	
+	letter = cv2.Canny(cuts[2], cannyLowerEdgeGradient, cannyUpperEdgeGradient, apertureSize=3)	
 	contours, hierarchy = cv2.findContours(letter.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
 	cnts = []
 
 	for cnt in contours:
-		cnt = cv2.approxPolyDP(cnt,.05,True)
-		if cv2.contourArea(cnt)>5:
+		epsilon = .05
+		cnt = cv2.approxPolyDP(cnt,epsilon,True)
+		if cv2.contourArea(cnt)>5: # get rid of insignificant areas
 			cnts.append(cnt)
 
 	imgCopy2 = img.copy()
-	cv2.drawContours(imgCopy2,cnts,-1,(0,255,0),3)
+	green = (0,255,0)
+	thickness = 3
+	cv2.drawContours(imgCopy2,cnts,-1,green,thickness)
 	return letter,imgCopy2
 
 def getEdgesOfCuts(img, cuts):
@@ -37,7 +40,7 @@ def getEdgesOfCuts(img, cuts):
 			# minVal = value of intensity gradient that is NOT an edge
 			# maxVal = value of intensity gradient that is an edge
 			# apertureSize = size of the Sobel kernel
-			bin = cv2.Canny(cut, 100, 200, apertureSize=5)
+			bin = cv2.Canny(cut, cannyLowerEdgeGradient, cannyUpperEdgeGradient, apertureSize=5)
 
 			# src;
 			# kernel = function with two parameters:
@@ -51,7 +54,8 @@ def getEdgesOfCuts(img, cuts):
 			cnts = []
 		
 			for cnt in contours: 
-				cnt = cv2.approxPolyDP(cnt, 12, True)
+				epsilon = 12
+				cnt = cv2.approxPolyDP(cnt, epsilon, True)
 				area = cv2.contourArea(cnt)
 				cnts.append(cnt)
 
@@ -62,7 +66,9 @@ def getEdgesOfCuts(img, cuts):
 			# color = color of contours in RGB
 			# thickness = thickness of line
 			imgcopy = img.copy()
-			cv2.drawContours(imgcopy,cnts,-1,(0,255,0),3)
+			green = (0,255,0)
+			thickness = 3
+			cv2.drawContours(imgcopy,cnts,-1,green,thickness)
 			imgs.append(imgcopy)
 
 	return imgs
@@ -89,8 +95,6 @@ def getCutsByThreshold(img,dst):
 		# ret = calculated threshold value
 		# bin = output image			
 		ret,bin = cv2.threshold(gray,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
-		'''retval, bin = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY)
-		bin = cv2.adaptiveThreshold(gray,255, cv2.ADAPTIVE_THRESH_MEAN_C,cv2.THRESH_BINARY_INV,11,2)'''
 
 		# runs closing morphological transformation to get rid of small points in image
 		# --------------
@@ -101,21 +105,11 @@ def getCutsByThreshold(img,dst):
 		se = np.ones((closeKernelSize,closeKernelSize), dtype='uint8')
 		bin = cv2.morphologyEx(bin, cv2.MORPH_CLOSE, se)
 
-		'''kernel = np.ones((5,5),np.uint8)
-		bin = cv2.erode(bin,kernel,iterations = 1)
-		bin = cv2.dilate(bin, cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(5,5)))
-		bin = cv2.dilate(bin, kernel)'''
 		reses.append(bin)
 
 		imgcopy = img.copy()
 		cut = cv2.bitwise_and(imgcopy,imgcopy,mask=bin)
 		cuts.append(cut)
-
-		'''bin = cv2.dilate(bin, cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(5,5)))
-	-	bin = cv2.Canny(cut, 100, 200, apertureSize=5)
-		bin = cv2.dilate(bin, cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(5,5)))
-		canny.append(binCanny)
-		bin = cv2.cvtColor(cut,cv2.COLOR_BGR2GRAY)'''
 
 		# src;
 		# mode = structure of returned array. RETR_LIST is just an array;
@@ -133,10 +127,6 @@ def getCutsByThreshold(img,dst):
 			area = cv2.contourArea(cnt) # area = numerical value
 			cnts.append(cnt)
 
-		'''cv2.drawContours(imgcopy,cnts,-1,(0,255,0),3)
-		mask = np.zeros(imgcopy.shape[:2], np.uint8)
-		cv2.drawContours(mask, cnt, -1, 255, -1)'''
-
 	return reses,cuts
 
 def displayEverything(dst, letter, imgs, imgCopy2, reses, cuts):
@@ -153,36 +143,31 @@ def displayEverything(dst, letter, imgs, imgCopy2, reses, cuts):
 	imgCopy2 = np.concatenate((imgCopy2, dst), axis=1)
 	cv2.imshow('ORIGINAL',imgCopy2)
 	cv2.moveWindow('ORIGINAL', 50, 0)
+	cv2.waitKey(0)
+	cv2.destroyWindow('ORIGINAL')
+
 	cv2.imshow('Letter', letter)
-	cv2.moveWindow('Letter', 50, len(letter))
+	cv2.moveWindow('Letter', 50, 0)
+	cv2.waitKey(0)
+	cv2.destroyWindow('Letter')
+
 	currImg = imgs[0]
 	for i in range(1, len(imgs)):
 		currImg = np.concatenate((currImg, imgs[i]), axis=1)
 	cv2.imshow('Original Cuts',currImg)
-	heig = len(imgCopy2) + len(currImg)
-	cv2.moveWindow('Original Cuts', 50, len(imgCopy2) + len(currImg))
+	cv2.moveWindow('Original Cuts', 50, 0)
+	cv2.waitKey(0)
+	cv2.destroyWindow('Original Cuts')
+
 	currImg = reses[0]
 	for i in range(1, len(reses)):
 		currImg = np.concatenate((currImg, reses[i]), axis=1)
 	cv2.imshow('Thresholds',currImg)
-	cv2.moveWindow('Thresholds', 50, heig + len(currImg))
+	cv2.moveWindow('Thresholds', 50, 0)
+	cv2.waitKey(0)
+	cv2.destroyWindow('Thresholds')
 
 def findAndDisplayLetter(img):
-	'''gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
-	edges = cv2.Canny(img,50,150,apertureSize = 3)
-
-	lines = cv2.HoughLines(edges,1,np.pi/180,10)
-	for rho,theta in lines[0]:
-	    a = np.cos(theta)
-	    b = np.sin(theta)
-	    x0 = a*rho
-	    y0 = b*rho
-	    x1 = int(x0 + 1000*(-b))
-	    y1 = int(y0 + 1000*(a))
-	    x2 = int(x0 - 1000*(-b))
-	    y2 = int(y0 - 1000*(a))
-
-	    cv2.line(img,(x1,y1),(x2,y2),(0,0,255),2)'''
 
 	# denoises image using optimized Non-Local Means alg
 	# --------------
@@ -196,16 +181,6 @@ def findAndDisplayLetter(img):
 	lum = 10
 	lumColor = lum
 	dst = cv2.fastNlMeansDenoisingColored(img,None,lum,lumColor,7,21)
-	'''dst = cv2.GaussianBlur(img, (5, 5), 0)
-	dst = cv2.cvtColor(dst,cv2.COLOR_BGR2HSV)
-
-	bin = cv2.Canny(dst,50,300)
-	gray = cv2.cvtColor(dst,cv2.COLOR_BGR2GRAY)
-
-	hist = cv2.calcHist([gray],[0],None,[256],[0,256])
-	plt.hist(gray.ravel(),256,[0,256])
-	plt.show()
-	canny = []'''
 
 	reses,cuts = getCutsByThreshold(img, dst)
 	imgs = getEdgesOfCuts(img, cuts)
@@ -236,19 +211,27 @@ def getImageFromUser():
 		sys.exit(1)
 	return img
 
-def cleanUp():
-	cv2.destroyWindow('ORIGINAL')
-	cv2.destroyWindow('Letter')
-	cv2.destroyWindow('Original Cuts')
-	cv2.destroyWindow('Thresholds')
+# mostly copied from http://codeplasma.com/2012/12/03/getting-webcam-images-with-python-and-opencv-2-for-real-this-time/
+def getImageFromCamera():
+	camIndex = 0
+	cap = cv2.VideoCapture(camIndex)
+	cap.open(camIndex)
+
+	rampFrames = 30
+	for i in xrange(rampFrames):
+		cap.read()
+
+	success, im = cap.read()
+	cap.release()
+	if success:
+		return im
+	else:
+		print("Failed to take picture.")
 
 def main():
 	while True:
-		img = getImageFromUser()
-		getNewDebugValFromUser(0, 25)
+		img = getImageFromCamera()
 		findAndDisplayLetter(img)
-		cv2.waitKey(0)
-		cleanUp()
 		if raw_input('Quit? (y/n) ') == 'y':
 			break
 
