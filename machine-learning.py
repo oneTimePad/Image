@@ -14,8 +14,17 @@ from sklearn import neighbors
 
 from sklearn import preprocessing
 
-shapeSize = 500
+# unnecessary?
+# shapeSize = 500
 
+# generates different triangles for SVM with a certain offset
+# x range is from 60% * max to max
+# y range is from 10% * max to max
+# ------------
+# height = max y
+# width = max x
+# iterations = number of different widths/heights
+# border = offset (in pixels) added to both x and y
 def triangle(height=100, width=100, iterations=20, border = 20):
 	baseLength = int(math.ceil(width * 0.60))
 	minHeight = int(math.ceil(height * 0.10))
@@ -29,6 +38,7 @@ def triangle(height=100, width=100, iterations=20, border = 20):
 			shapes.append(np.asarray(shape, np.int32))
 	return shapes
 
+# see triangle for doc, mins and maxs are set in first 4 lines
 def rectangle(height=100, width=100, iterations=20, border=20):
 	minLength = int(math.ceil(height * 0.10))
 	maxLength = height
@@ -43,6 +53,7 @@ def rectangle(height=100, width=100, iterations=20, border=20):
 			shapes.append(np.array(shape, np.int32))
 	return shapes
 
+# see triangle for doc, mins and maxs are set in first 5 lines
 def rhombus(height=100, width=100, iterations=20, border=20):
 	minHeight = int(math.ceil(height * 0.10))
 	maxHeight = height
@@ -58,6 +69,7 @@ def rhombus(height=100, width=100, iterations=20, border=20):
 			shapes.append(np.array(shape, np.int32))
 	return shapes
 
+# see triangle for doc, mins and maxs are set in first 5 lines
 def trapezoid(height=100, width=100, iterations=20, border=20):
 	minTop = int(math.ceil(width * 0.10))
 	maxTop = int(math.ceil(width * 0.35))
@@ -263,21 +275,8 @@ def mod_radial_intercepts(shape, img_size, iterations=10, border=20):
 	#[number of intersect,min_angle,max_angle]
 	return np.asarray(intersect_list, dtype=np.float)
 
-
-
-
-
-
-
-
-
-
-
-
-
 def disp_intercepts(shape, img_size, iterations=10):
 	pass
-
 
 data = []
 classes = []
@@ -302,13 +301,13 @@ for func,name in zip([triangle(width=img_size, height=img_size), rectangle(width
 
 		#because opencv contours have a ridiculous structure
 		shape_cnt = [np.asarray([[[i[0], i[1]]] for i in shape])]
-		cv2.drawContours(img, shape_cnt, -1, 255, 1)
-		cv2.imshow("img", img)
-		print name
-		print intersect_list
+		# cv2.drawContours(img, shape_cnt, -1, 255, 1)
+		# cv2.imshow("img", img)
+		# print name
+		# print intersect_list
 		intersect_list.reshape(-1,3)
-		#print intersect_list
-		cv2.waitKey()
+		# print intersect_list
+		# cv2.waitKey()
 
 data = np.asarray(data)
 print [len(i) for i in data]
@@ -328,7 +327,6 @@ svm = svm.SVC(probability=True)
 #knn = neighbors.KNeighborsClassifier(warn_on_equidistant=False)
 #dtree = tree.DecisionTreeClassifier()
 
-
 svm.fit(scale_data, classes)
 print svm
 
@@ -344,8 +342,10 @@ for func,name in zip([triangle(width=img_size, height=img_size), rectangle(width
 	for shape in func:
 		#print "tick"
 
-		#Failed fix this!!!!!!!!!!!!!!!!!!1
+		#Failed fix this!!!!!!!!!!!!!!!!!!1 - works after adding hu moments
 		intersect_list = radial_intercepts(shape, img_size)
+		moment_list = getMoments(shape, img_size)
+		intersect_list = np.concatenate((intersect_list, moment_list))
 		intersect_list = np.asarray(scaler.transform(intersect_list))
 
 		svm_prediction = svm.predict(intersect_list)
@@ -388,8 +388,8 @@ while cv2.waitKey():
 '''
 
 #print svm_errors
-print "SVM: ", len(svm_errors), "/", lenzip
-print count
+print "SVM:", 100.0*count/(count+len(svm_errors)), "% =", len(svm_errors), "/", count + len(svm_errors), "errors" 
+print count, "correct"
 img_size += 20
 
 for err in svm_errors:
@@ -401,6 +401,6 @@ for err in svm_errors:
 	print err[1], err[3]
 	print err[4]
 	print ""
-	cv2.imshow(str(err[1][0]), img)
-	cv2.waitKey()
-	cv2.destroyAllWindows()
+	# cv2.imshow(str(err[1][0]), img)
+	# cv2.waitKey()
+	# cv2.destroyAllWindows()

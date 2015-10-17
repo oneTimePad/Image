@@ -1,7 +1,6 @@
 import numpy as np
 import cv2
 import sys, os, errno
-from matplotlib import pyplot as plt
 
 # global values for quickly changing values for fine-tuning stuff
 default = 7
