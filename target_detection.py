@@ -11,20 +11,21 @@ cannyUpperEdgeGradient = 200
 
 def getLetter(img, cuts):
 	#WORKS!!!!!!!!!!!!!!!!!
-	letter = cv2.Canny(cuts[2], cannyLowerEdgeGradient, cannyUpperEdgeGradient, apertureSize=3)	
-	contours, hierarchy = cv2.findContours(letter.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
-	cnts = []
+	for cut in cuts:
+		letter = cv2.Canny(cut, cannyLowerEdgeGradient, cannyUpperEdgeGradient, apertureSize=3)	
+		contours, hierarchy = cv2.findContours(letter.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+		cnts = []
 
-	for cnt in contours:
-		epsilon = .05
-		cnt = cv2.approxPolyDP(cnt,epsilon,True)
-		if cv2.contourArea(cnt)>5: # get rid of insignificant areas
-			cnts.append(cnt)
+		for cnt in contours:
+			epsilon = .05
+			cnt = cv2.approxPolyDP(cnt,epsilon,True)
+			if cv2.contourArea(cnt)>5: # get rid of insignificant areas
+				cnts.append(cnt)
 
-	imgCopy2 = img.copy()
-	green = (0,255,0)
-	thickness = 3
-	cv2.drawContours(imgCopy2,cnts,-1,green,thickness)
+		imgCopy2 = img.copy()
+		green = (0,255,0)
+		thickness = 3
+		cv2.drawContours(imgCopy2,cnts,-1,green,thickness)
 	return letter,imgCopy2
 
 def getEdgesOfCuts(img, cuts):
@@ -179,7 +180,8 @@ def findAndDisplayLetter(img):
 	# 				   should be odd (21), increases search time linearly
 	lum = 10
 	lumColor = lum
-	dst = cv2.fastNlMeansDenoisingColored(img,None,lum,lumColor,7,21)
+	# dst = cv2.fastNlMeansDenoisingColored(img,None,lum,lumColor,7,21)
+	dst = img
 
 	reses,cuts = getCutsByThreshold(img, dst)
 	imgs = getEdgesOfCuts(img, cuts)

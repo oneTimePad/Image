@@ -118,11 +118,13 @@ def getMoments(shape, img_size, border = 20):
 		huMnts = huMnts[:6]
 	return huMnts;
 
+'''
 def generate_contours(shapeGen):
 	momentList = []
 	for shape in shapeGen():
 		momentList.append(getMoments(shape))
 	return momentList;
+'''
 
 def radial_intercepts(shape, img_size, iterations=10, border=20):
 	img_size += border*2
@@ -198,7 +200,8 @@ def radial_intercepts(shape, img_size, iterations=10, border=20):
 	#[number of intersect,min_angle,max_angle]
 	return np.asarray(intersect_list, dtype=np.float)
 
-
+# idk why this exists, only difference is the drawContours line and the imshow line below it-
+'''
 def mod_radial_intercepts(shape, img_size, iterations=10, border=20):
 	img_size += border*2
 	img = np.zeros((img_size,img_size), np.uint8)
@@ -274,6 +277,7 @@ def mod_radial_intercepts(shape, img_size, iterations=10, border=20):
 
 	#[number of intersect,min_angle,max_angle]
 	return np.asarray(intersect_list, dtype=np.float)
+'''
 
 def disp_intercepts(shape, img_size, iterations=10):
 	pass
