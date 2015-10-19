@@ -11,6 +11,9 @@ cannyUpperEdgeGradient = 200
 
 def getLetter(img, cuts):
 	#WORKS!!!!!!!!!!!!!!!!!
+	letters = []
+	retImgs = []
+
 	for cut in cuts:
 		letter = cv2.Canny(cut, cannyLowerEdgeGradient, cannyUpperEdgeGradient, apertureSize=3)	
 		contours, hierarchy = cv2.findContours(letter.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
@@ -26,7 +29,11 @@ def getLetter(img, cuts):
 		green = (0,255,0)
 		thickness = 3
 		cv2.drawContours(imgCopy2,cnts,-1,green,thickness)
-	return letter,imgCopy2
+
+		letters.append(letter)
+		retImgs.append(imgCopy2)
+
+	return letters,retImgs
 
 def getEdgesOfCuts(img, cuts):
 	imgs = []
@@ -129,7 +136,7 @@ def getCutsByThreshold(img,dst):
 
 	return reses,cuts
 
-def displayEverything(dst, letter, imgs, imgCopy2, reses, cuts):
+def displayEverything(dst, letters, imgs, retImgs, reses, cuts):
 	# write cuts to file (idk)
 	try:
 	    os.makedirs(os.getcwd() + '/ret_pics/')
@@ -140,16 +147,17 @@ def displayEverything(dst, letter, imgs, imgCopy2, reses, cuts):
 		cv2.imwrite(os.getcwd() + '/ret_pics/cut'+str(i)+'.jpg',cuts[i])
 
 	# display everything nicely
-	imgCopy2 = np.concatenate((imgCopy2, dst), axis=1)
-	cv2.imshow('ORIGINAL',imgCopy2)
-	cv2.moveWindow('ORIGINAL', 50, 0)
+	cv2.imshow('Denoised Original',dst)
+	cv2.moveWindow('Denoised Original', 50, 0)
 	cv2.waitKey(0)
-	cv2.destroyWindow('ORIGINAL')
+	cv2.destroyWindow('Denoised Original')
 
-	cv2.imshow('Letter', letter)
-	cv2.moveWindow('Letter', 50, 0)
-	cv2.waitKey(0)
-	cv2.destroyWindow('Letter')
+	for i in range(0, len(letters)):
+		# letter = np.concatenate((letters[i], retImgs[i]), axis=1)
+		cv2.imshow('Letter #' + str(i), letters[i])
+		cv2.moveWindow('Letter #' + str(i), 50, 0)
+		cv2.waitKey(0)
+		cv2.destroyWindow('Letter #' + str(i))
 
 	currImg = imgs[0]
 	for i in range(1, len(imgs)):
@@ -185,9 +193,9 @@ def findAndDisplayLetter(img):
 
 	reses,cuts = getCutsByThreshold(img, dst)
 	imgs = getEdgesOfCuts(img, cuts)
-	letter,imgCopy2 = getLetter(img, cuts)
+	letters,retImgs = getLetter(img, cuts)
 
-	displayEverything(dst, letter, imgs, imgCopy2, reses, cuts)
+	displayEverything(dst, letters, imgs, retImgs, reses, cuts)
 
 def getNewDebugValFromUser(minVal, maxVal, isInteger=True):
 	global debugValue
