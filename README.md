@@ -4,8 +4,8 @@ PLEASE READ!!!!:
 
 Current Assignments:
 
-	1)***Shape Detection Program(working acceptably): Monday 26th
-	2)***Machine learning integrated with Shape detection: Monday 26th
+	1)***Shape Detection Program(working acceptably): due  Monday 26th
+	2)***Machine learning integrated with Shape detection: due Monday 26th
 	!(I suggest splitting the work up and meeting on the side)
 	Push CONSTANTLY!
 
