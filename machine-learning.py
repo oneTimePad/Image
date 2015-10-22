@@ -85,8 +85,10 @@ def trapezoid(height=100, width=100, iterations=20, border=20):
 			shapes.append(np.array(shape, np.int32))
 	return shapes
 
+'''
 def boundingArea(rect):
 	return abs(rect[0] - rect[2]) * abs(rect[1] * rect[3]);
+'''
 
 def getMoments(shape, img_size, border = 20):
 	huMnts = [1,2,3,4,5,6]
@@ -282,85 +284,118 @@ def mod_radial_intercepts(shape, img_size, iterations=10, border=20):
 def disp_intercepts(shape, img_size, iterations=10):
 	pass
 
-data = []
-classes = []
-
 img_size = 200
 
-for func,name in zip([triangle(width=img_size, height=img_size), rectangle(width=img_size, height=img_size), trapezoid(width=img_size, height=img_size), rhombus(width=img_size, height=img_size)], ['triangle', 'rectangle', 'trapezoid', 'rhombus']):
-	print name
-	skip = 0
-	for shape in func:
-		if skip < 2:
-			skip += 1
-			continue
-		skip = 0
-		img = np.zeros((img_size + 40, img_size + 40), np.uint8)
-		intersect_list = radial_intercepts(shape, img_size)
-
-		moment_list = getMoments(shape, img_size)
-		intersect_list = np.concatenate((intersect_list, moment_list))
-		data.append(intersect_list)
-		classes.append(name)
-
-		#because opencv contours have a ridiculous structure
-		shape_cnt = [np.asarray([[[i[0], i[1]]] for i in shape])]
-		# cv2.drawContours(img, shape_cnt, -1, 255, 1)
-		# cv2.imshow("img", img)
-		# print name
-		# print intersect_list
-		intersect_list.reshape(-1,3)
-		# print intersect_list
-		# cv2.waitKey()
-
-data = np.asarray(data)
-print [len(i) for i in data]
-
-print len(data)
-print len(data[0])
-print len(classes)
+shapeGenerators = [triangle(width=img_size, height=img_size), rectangle(width=img_size, height=img_size), trapezoid(width=img_size, height=img_size), rhombus(width=img_size, height=img_size)]
+classNames = ['triangle', 'rectangle', 'trapezoid', 'rhombus']
+descriptors = [radial_intercepts, getMoments]
 
 scaler = preprocessing.StandardScaler()
-#scaler = preprocessing.StandardScaler()
-scaler.fit(data)
-scale_data = scaler.transform(data)
 
-print scale_data
+def getDescsFor(shape):
+	allShapeDescs = []
+	for descFunc in descriptors:
+		if len(allShapeDescs) == 0:
+			allShapeDescs = descFunc(shape, img_size)
+		else:
+			allShapeDescs = np.concatenate((allShapeDescs, descFunc(shape, img_size)))
 
-svm = svm.SVC(probability=True)
+	return allShapeDescs
+
+def getTrainingData():
+	data = []
+	classes = []
+
+	for func,name in zip(shapeGenerators, classNames):
+		print name
+		skip = 0
+		for shape in func:
+			# only take every 3rd shape?
+			if skip < 2: 
+				skip += 1
+				continue
+			skip = 0
+
+			data.append(getDescsFor(shape))
+			classes.append(name)
+
+			#because opencv contours have a ridiculous structure
+			# img = np.zeros((img_size + 40, img_size + 40), np.uint8)
+			# shape_cnt = [np.asarray([[[i[0], i[1]]] for i in shape])]
+			# cv2.drawContours(img, shape_cnt, -1, 255, 1)
+			# cv2.imshow("img", img)
+			# cv2.waitKey()
+			
+			# print name
+			# print intersect_list
+			
+			# intersect_list.reshape(-1,3) -- not sure what this does since the print statements show no diff
+			# print intersect_list
+
+	data = np.asarray(data)
+	print [len(i) for i in data]
+
+	print len(data)
+	print len(data[0])
+	print len(classes)
+
+	return data, classes
+
+def trainAndReturnSVM():
+	data, classes = getTrainingData()
+
+	scaler.fit(data)
+	scale_data = scaler.transform(data)
+	print scale_data
+
+	retSvm = svm.SVC(probability=True)
+	retSvm.fit(scale_data, classes)
+	print retSvm
+	return retSvm
+
 #knn = neighbors.KNeighborsClassifier(warn_on_equidistant=False)
 #dtree = tree.DecisionTreeClassifier()
+#dtree_prediction = dtree.predict(intersect_list)
 
-svm.fit(scale_data, classes)
-print svm
-
-svm_errors = []
 #knn_errors = []
 #dtree_errors = []
 #nn_errors = []
 
-lenzip = 0
+svm = trainAndReturnSVM()
+svm_errors = []
+
 count = 0
-for func,name in zip([triangle(width=img_size, height=img_size), rectangle(width=img_size, height=img_size), trapezoid(width=img_size, height=img_size), rhombus(width=img_size, height=img_size)], ['triangle', 'rectangle', 'trapezoid', 'rhombus']):
-	print name
+for func,name in zip(shapeGenerators, classNames):
+	# print name
 	for shape in func:
-		#print "tick"
+		inputData = scaler.transform(getDescsFor(shape))
 
-		#Failed fix this!!!!!!!!!!!!!!!!!!1 - works after adding hu moments
-		intersect_list = radial_intercepts(shape, img_size)
-		moment_list = getMoments(shape, img_size)
-		intersect_list = np.concatenate((intersect_list, moment_list))
-		intersect_list = np.asarray(scaler.transform(intersect_list))
-
-		svm_prediction = svm.predict(intersect_list)
-		#dtree_prediction = dtree.predict(intersect_list)
+		svm_prediction = svm.predict(inputData)
 		if svm_prediction != name:
-			prob = svm.predict_proba(intersect_list)
-			svm_errors.append([name, svm_prediction, shape, prob, intersect_list])
+			prob = svm.predict_proba(inputData)
+			svm_errors.append([name, svm_prediction, shape, prob, inputData])
 		else:
 			count+=1
-'''
 
+#print svm_errors
+print "SVM:", 100.0*count/(count+len(svm_errors)), "% =", len(svm_errors), "/", count + len(svm_errors), "errors" 
+print count, "correct"
+
+# img_size += 20
+# for err in svm_errors:
+# 	shape = err[2]
+# 	#because opencv contours have a ridiculous structure
+# 	img = np.zeros((img_size,img_size), np.uint8)
+# 	shape_cnt = [np.asarray([[[i[0], i[1]]] for i in shape])]
+# 	cv2.drawContours(img, shape_cnt, -1, 255, 1)
+# 	print err[1], err[3]
+# 	print err[4]
+# 	print ""
+# 	cv2.imshow(str(err[1][0]), img)
+# 	cv2.waitKey()
+# 	cv2.destroyAllWindows()
+
+'''
 img = cv2.imread('/home/lie/Desktop/p/cut1.jpg')
 
 letter = cv2.Canny(img,100,200,apertureSize=3)	
@@ -388,23 +423,4 @@ print svm_prediction
 
 while cv2.waitKey():
 	cv2.imshow("img",img)
-
 '''
-
-#print svm_errors
-print "SVM:", 100.0*count/(count+len(svm_errors)), "% =", len(svm_errors), "/", count + len(svm_errors), "errors" 
-print count, "correct"
-img_size += 20
-
-for err in svm_errors:
-	img = np.zeros((img_size,img_size), np.uint8)
-	shape = err[2]
-	#because opencv contours have a ridiculous structure
-	shape_cnt = [np.asarray([[[i[0], i[1]]] for i in shape])]
-	cv2.drawContours(img, shape_cnt, -1, 255, 1)
-	print err[1], err[3]
-	print err[4]
-	print ""
-	# cv2.imshow(str(err[1][0]), img)
-	# cv2.waitKey()
-	# cv2.destroyAllWindows()
